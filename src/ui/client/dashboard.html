@@ -3,376 +3,480 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAFETY-TRANSFER | Command Center</title>
-    <!-- Fonts: Inter & JetBrains Mono for that technical look -->
+    <title>SAFETY-TRANSFER | Holodeck OS</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap');
 
         :root {
             --bg-dark: #050505;
-            --panel-bg: rgba(20, 20, 25, 0.7);
-            --border: rgba(255, 255, 255, 0.08);
+            --panel-bg: rgba(20, 20, 25, 0.65);
+            --border: rgba(255, 255, 255, 0.1);
             --accent: #00f2ff;
             --warning: #ffcc00;
             --danger: #ff2a6d;
             --success: #00ff9d;
-            --grid-color: rgba(0, 242, 255, 0.03);
+            --grid-color: rgba(0, 242, 255, 0.05);
+            --glass-blur: 20px;
         }
 
         body {
             margin: 0;
             background-color: var(--bg-dark);
             background-image: 
+                radial-gradient(circle at 50% 50%, rgba(0, 242, 255, 0.05) 0%, transparent 60%),
                 linear-gradient(var(--grid-color) 1px, transparent 1px),
                 linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
-            background-size: 40px 40px;
+            background-size: 100% 100%, 40px 40px, 40px 40px;
             color: #eee;
             font-family: 'Inter', sans-serif;
             height: 100vh;
-            display: grid;
-            grid-template-rows: 60px 1fr 60px;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            perspective: 2000px; /* For 4D Depth */
         }
 
         /* --- HEADER --- */
         header {
+            height: 60px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 40px;
+            padding: 0 30px;
             border-bottom: 1px solid var(--border);
-            background: rgba(5, 5, 5, 0.8);
+            background: rgba(5, 5, 5, 0.9);
             backdrop-filter: blur(10px);
+            z-index: 1000;
         }
         .brand {
             font-family: 'JetBrains Mono', monospace;
             font-weight: 700;
             letter-spacing: 2px;
             color: var(--accent);
-            text-shadow: 0 0 10px rgba(0, 242, 255, 0.4);
+            text-shadow: 0 0 15px var(--accent);
         }
-        .status-badge {
+        .controls button {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: #aaa;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'JetBrains Mono';
             font-size: 0.8rem;
-            padding: 4px 12px;
-            border-radius: 12px;
-            background: rgba(0, 255, 157, 0.1);
-            color: var(--success);
-            border: 1px solid var(--success);
+        }
+        .controls button:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
         }
 
-        /* --- MAIN DASHBOARD GRID --- */
-        main {
-            display: grid;
-            grid-template-columns: 300px 1fr 300px;
-            gap: 20px;
+        /* --- STAGE MANAGER (Sidebar) --- */
+        #stage-manager {
+            position: fixed;
+            left: 0;
+            top: 60px;
+            bottom: 0;
+            width: 60px;
+            background: rgba(0,0,0,0.4);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            transition: width 0.3s ease;
+            z-index: 900;
+        }
+        #stage-manager:hover { width: 250px; background: rgba(0,0,0,0.8); }
+        #stage-manager .dock-item {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: grab;
+            transition: all 0.2s;
+            color: #555;
+        }
+        #stage-manager:hover .dock-item {
+            width: 90%;
+            justify-content: flex-start;
+            padding-left: 15px;
+            color: #eee;
+        }
+        #stage-manager:hover .dock-item:after {
+            content: attr(data-label);
+            margin-left: 10px;
+            font-family: 'JetBrains Mono';
+            font-size: 0.8rem;
+        }
+
+        /* --- MAIN GRID LAYOUT --- */
+        #workspace {
+            flex: 1;
+            margin-left: 60px; /* Offset for Stage Manager */
             padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-template-rows: repeat(12, 1fr);
+            gap: 15px;
+            transform-style: preserve-3d;
+            height: calc(100vh - 80px); /* Leave room for header */
         }
 
+        /* --- DRAGGABLE PANELS --- */
         .panel {
             background: var(--panel-bg);
             border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 20px;
+            backdrop-filter: blur(var(--glass-blur));
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+            position: relative;
         }
-        .panel h3 {
-            margin: 0;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            color: #888;
-            letter-spacing: 1px;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 10px;
+        
+        .panel:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.7);
         }
 
-        /* LEFT: TELEMETRY */
-        .metric {
+        /* Visual State when Dragging */
+        .panel.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+            border: 1px dashed var(--accent);
+            cursor: grabbing;
+        }
+
+        .panel-header {
+            padding: 10px 15px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #888;
+            border-bottom: 1px solid var(--border);
+            cursor: grab; /* The Handle */
             display: flex;
             justify-content: space-between;
-            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.02);
+            user-select: none;
+        }
+        .panel-header:active { cursor: grabbing; }
+
+        .panel-content {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* --- WIDGET CONTENT STYLES --- */
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-family: 'JetBrains Mono';
             font-size: 0.9rem;
         }
-        .metric span:last-child { color: var(--accent); }
+        .metric-val { color: var(--accent); font-weight: bold; }
         
-        .progress-bar {
-            height: 4px;
-            background: #333;
-            border-radius: 2px;
-            overflow: hidden;
-            margin-top: 5px;
-        }
-        .progress-fill {
+        /* 3D Viewport in Panel */
+        #mini-viewport {
+            width: 100%;
             height: 100%;
-            background: var(--accent);
-            width: 0%;
-            transition: width 0.5s ease;
-        }
-
-        /* CENTER: VISUALIZER (The "World") */
-        #viewport {
-            position: relative;
-            background: radial-gradient(circle at center, rgba(10, 20, 30, 0.5), #000);
+            border-radius: 8px;
             border: 1px solid var(--border);
-            border-radius: 16px;
+            background: radial-gradient(circle, #1a1a25 0%, #000 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            perspective: 1000px;
-            overflow: hidden;
+            position: relative;
         }
-        /* Mock 3D Elements */
-        .robot-model {
-            width: 100px;
-            height: 150px;
-            border: 2px solid var(--accent);
-            border-radius: 10px;
-            box-shadow: 0 0 20px var(--accent);
-            transform: rotateY(0deg);
-            animation: float 6s ease-in-out infinite;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'JetBrains Mono';
-            font-size: 0.7rem;
-            color: var(--accent);
+        
+        .holo-model {
+            width: 50px;
+            height: 80px;
+            border: 1px solid var(--accent);
+            box-shadow: 0 0 15px var(--accent);
+            animation: holoSpin 8s infinite linear;
         }
-        .safety-capsule {
+
+        /* --- LOGS --- */
+        .log-line { font-family: 'JetBrains Mono'; font-size: 0.7rem; margin-bottom: 4px; opacity: 0.7; }
+
+        /* --- EPHEMERAL OVERLAY (Integrated) --- */
+        #ephemeral-overlay {
             position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
             width: 300px;
-            height: 300px;
-            border: 1px dashed var(--danger);
-            border-radius: 50%;
-            opacity: 0.3;
-            transform: rotateX(60deg);
-            animation: scan 4s linear infinite;
-        }
-
-        /* RIGHT: LOGS & CHAT */
-        #log-feed {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            color: #aaa;
-            overflow-y: auto;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        .log-entry { opacity: 0.7; }
-        .log-entry.warn { color: var(--warning); }
-        .log-entry.crit { color: var(--danger); }
-
-        /* --- EPHEMERAL OVERLAY (Hidden by default) --- */
-        #ephemeral-layer {
-            position: absolute;
-            top: 20%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 400px;
-            background: rgba(10, 10, 15, 0.95);
+            background: rgba(0,0,0,0.9);
             border: 1px solid var(--accent);
-            border-radius: 16px;
+            border-radius: 12px;
             padding: 20px;
-            display: none; /* Toggled by intent */
-            box-shadow: 0 0 50px rgba(0, 242, 255, 0.2);
-            z-index: 100;
+            display: none;
+            z-index: 2000;
+            box-shadow: 0 0 50px rgba(0, 242, 255, 0.3);
         }
-        #ephemeral-layer.active { display: block; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        #ephemeral-overlay.active { display: block; animation: popIn 0.3s; }
 
-        /* VOICE BUTTON */
-        #voice-activator {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--panel-bg);
-            border: 1px solid var(--accent);
-            color: var(--accent);
-            padding: 15px 40px;
-            border-radius: 30px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);
-        }
-        #voice-activator:hover {
-            background: var(--accent);
-            color: #000;
-            box-shadow: 0 0 40px rgba(0, 242, 255, 0.6);
-        }
-
-        @keyframes float { 0%, 100% { transform: translateY(0) rotateY(0deg); } 50% { transform: translateY(-10px) rotateY(10deg); } }
-        @keyframes scan { 0% { transform: rotateX(60deg) scale(0.8); opacity: 0.1; } 50% { opacity: 0.4; } 100% { transform: rotateX(60deg) scale(1.2); opacity: 0; } }
-        @keyframes popIn { from { transform: translateX(-50%) scale(0.8); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
+        @keyframes holoSpin { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(360deg); } }
+        @keyframes popIn { from { opacity: 0; transform: translate(-50%, -40%); } to { opacity: 1; transform: translate(-50%, -50%); } }
 
     </style>
 </head>
 <body>
 
     <header>
-        <div class="brand">SAFETY-TRANSFER <span style="color:#666">//</span> OS</div>
-        <div class="status-badge">SYSTEM: ONLINE</div>
+        <div class="brand">HOLODECK <span style="color:#555">v2.0</span></div>
+        <div class="controls">
+            <button onclick="resetLayout()">[ RESET LAYOUT ]</button>
+            <button onclick="triggerVoice()">[ VOICE CMD ]</button>
+        </div>
     </header>
 
-    <main>
-        <!-- LEFT: Humanoid Status -->
-        <div class="panel">
-            <h3>Unitree G1 Status</h3>
-            <div class="metric">
-                <span>Joint Temp</span>
-                <span id="metric-temp">42°C</span>
-            </div>
-            <div class="progress-bar"><div class="progress-fill" style="width: 40%"></div></div>
+    <!-- SIDEBAR / STAGE MANAGER -->
+    <div id="stage-manager">
+        <div class="dock-item" draggable="true" ondragstart="dragStartNew(event, 'telemetry')" data-label="Telemetry">T</div>
+        <div class="dock-item" draggable="true" ondragstart="dragStartNew(event, 'viewport')" data-label="3D View">V</div>
+        <div class="dock-item" draggable="true" ondragstart="dragStartNew(event, 'logs')" data-label="Sys Logs">L</div>
+        <div class="dock-item" draggable="true" ondragstart="dragStartNew(event, 'energy')" data-label="Energy">E</div>
+    </div>
 
-            <div class="metric">
-                <span>Battery</span>
-                <span id="metric-batt">87%</span>
-            </div>
-            <div class="progress-bar"><div class="progress-fill" style="width: 87%"></div></div>
+    <!-- MAIN WORKSPACE (Grid) -->
+    <div id="workspace" ondragover="allowDrop(event)" ondrop="drop(event)">
+        <!-- Panels injected here by Layout Engine -->
+    </div>
 
-            <div class="metric">
-                <span>Network Latency</span>
-                <span id="metric-ping">12ms</span>
-            </div>
+    <!-- HIDDEN TEMPLATES -->
+    <template id="tpl-telemetry">
+        <div class="metric-row"><span>Temp</span><span class="metric-val" id="val-temp">42°C</span></div>
+        <div class="metric-row"><span>Ping</span><span class="metric-val">12ms</span></div>
+        <div class="metric-row"><span>Risk</span><span class="metric-val" style="color:var(--success)">LOW</span></div>
+    </template>
 
-            <br>
-            <h3>Safety Adapter</h3>
-            <div class="metric">
-                <span>Margin</span>
-                <span id="metric-margin" style="color:var(--success)">0.45m</span>
-            </div>
-            <div class="metric">
-                <span>Risk Index</span>
-                <span id="metric-risk">LOW</span>
+    <template id="tpl-viewport">
+        <div id="mini-viewport">
+            <div class="holo-model"></div>
+            <!-- Ephemeral UI anchors here -->
+            <div id="ephemeral-overlay">
+                <h4 style="margin:0 0 10px 0; color:var(--accent)">INTENT DETECTED</h4>
+                <div id="e-widgets"></div>
+                <div id="e-avatar" style="margin-top:10px; font-style:italic; color:#888;"></div>
             </div>
         </div>
+    </template>
 
-        <!-- CENTER: Viewport -->
-        <div id="viewport">
-            <div class="safety-capsule"></div>
-            <div class="robot-model">
-                G1-Bot<br>STANDBY
-            </div>
-            
-            <!-- EPHEMERAL POPUP -->
-            <div id="ephemeral-layer">
-                <h3 style="color:var(--accent); margin-top:0;">INTENT DETECTED</h3>
-                <div id="dynamic-widgets">
-                    <!-- Sliders spawn here -->
-                </div>
-                <div id="avatar-feedback" style="margin-top:15px; font-style:italic; color:#aaa;">
-                    "Listening..."
-                </div>
-            </div>
+    <template id="tpl-logs">
+        <div id="log-container" style="height:100%">
+            <div class="log-line">[SYS] Boot Sequence Complete</div>
+            <div class="log-line">[NET] Uplink Established</div>
         </div>
-
-        <!-- RIGHT: Logs -->
-        <div class="panel">
-            <h3>System Logs</h3>
-            <div id="log-feed">
-                <div class="log-entry">[10:00:01] System Initialized</div>
-                <div class="log-entry">[10:00:02] Connected to Safety Layer</div>
-                <div class="log-entry">[10:00:05] Telemetry Stream: ACTIVE</div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Global Voice Trigger -->
-    <button id="voice-activator" onclick="triggerMockVoice()">
-        <span id="mic-icon">MICROPHONE ACTIVE</span>
-    </button>
+    </template>
 
     <script>
-        const ws = new WebSocket(`ws://${location.host}/ws`);
-        const logFeed = document.getElementById('log-feed');
-        const ephemeralLayer = document.getElementById('ephemeral-layer');
-        const dynamicWidgets = document.getElementById('dynamic-widgets');
-        const avatarFb = document.getElementById('avatar-feedback');
+        // --- LAYOUT ENGINE with Persistence ---
+        const DEFAULT_LAYOUT = [
+            { id: 'p1', type: 'telemetry', x: 1, y: 1, w: 3, h: 5 },
+            { id: 'p2', type: 'viewport',  x: 5, y: 1, w: 5, h: 8 },
+            { id: 'p3', type: 'logs',      x: 10, y: 1, w: 3, h: 12 },
+            { id: 'p4', type: 'energy',    x: 1, y: 7, w: 3, h: 4 }
+        ];
 
-        // --- Mock Telemetry Loop ---
-        setInterval(() => {
-            // Randomize Metrics for "Alive" feel
-            document.getElementById('metric-temp').innerText = (40 + Math.random() * 5).toFixed(1) + "°C";
-            document.getElementById('metric-ping').innerText = (10 + Math.floor(Math.random() * 10)) + "ms";
+        let currentLayout = [];
+        const workspace = document.getElementById('workspace');
+
+        function init() {
+            const saved = localStorage.getItem('holodeck_layout');
+            if (saved) {
+                currentLayout = JSON.parse(saved);
+            } else {
+                currentLayout = JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
+            }
+            renderLayout();
+            startLoops();
+        }
+
+        function renderLayout() {
+            workspace.innerHTML = '';
+            currentLayout.forEach(item => {
+                createPanelDOM(item);
+            });
+        }
+
+        function createPanelDOM(item) {
+            const panel = document.createElement('div');
+            panel.className = 'panel';
+            panel.id = item.id;
+            panel.draggable = true;
             
-            // Random Safety Fluctuation
-            const margin = (0.4 + Math.random() * 0.1).toFixed(2);
-            document.getElementById('metric-margin').innerText = margin + "m";
-        }, 1000);
+            // Grid Positioning
+            panel.style.gridColumnStart = item.x;
+            panel.style.gridColumnEnd = item.x + item.w;
+            panel.style.gridRowStart = item.y;
+            panel.style.gridRowEnd = item.y + item.h;
 
-        // --- WebSocket Handling ---
+            // Header
+            const header = document.createElement('div');
+            header.className = 'panel-header';
+            header.innerHTML = `<span>${item.type.toUpperCase()}</span> <span style="cursor:pointer" onclick="closePanel('${item.id}')">×</span>`;
+            panel.appendChild(header);
+
+            // Drag Events
+            panel.addEventListener('dragstart', (e) => dragStartPanel(e, item.id));
+
+            // Content
+            const content = document.createElement('div');
+            content.className = 'panel-content';
+            
+            // Inject Template content
+            const tpl = document.getElementById(`tpl-${item.type}`);
+            if (tpl) {
+                content.appendChild(tpl.content.cloneNode(true));
+            } else {
+                content.innerHTML = `<div style="text-align:center; padding-top:20px; color:#555">[ ${item.type} ]</div>`;
+            }
+            
+            panel.appendChild(content);
+            workspace.appendChild(panel);
+        }
+
+        // --- DRAG & DROP LOGIC ---
+        let draggedId = null;
+        let isNewItem = false;
+        let newType = null;
+
+        function dragStartPanel(e, id) {
+            draggedId = id;
+            isNewItem = false;
+            e.dataTransfer.effectAllowed = "move";
+            e.target.classList.add('dragging');
+        }
+
+        function dragStartNew(e, type) {
+            isNewItem = true;
+            newType = type;
+            e.dataTransfer.effectAllowed = "copy";
+        }
+
+        function allowDrop(e) {
+            e.preventDefault();
+        }
+
+        function drop(e) {
+            e.preventDefault();
+            
+            // Calculate Grid Pos
+            const rect = workspace.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // 12 columns, 12 rows logic approx
+            const colW = rect.width / 12;
+            const rowH = rect.height / 12;
+            
+            let gridX = Math.ceil(x / colW);
+            let gridY = Math.ceil(y / rowH);
+            if (gridX < 1) gridX = 1; if (gridX > 12) gridX = 12;
+            if (gridY < 1) gridY = 1; if (gridY > 12) gridY = 12;
+
+            if (isNewItem) {
+                // Add new panel
+                const newId = 'p_' + Date.now();
+                currentLayout.push({
+                    id: newId,
+                    type: newType,
+                    x: gridX, y: gridY,
+                    w: 3, h: 4 // Default size
+                });
+            } else {
+                // Move existing panel
+                const item = currentLayout.find(i => i.id === draggedId);
+                if (item) {
+                    item.x = gridX;
+                    item.y = gridY;
+                    document.getElementById(draggedId).classList.remove('dragging');
+                }
+            }
+            
+            saveAndRender();
+        }
+
+        function closePanel(id) {
+            currentLayout = currentLayout.filter(i => i.id !== id);
+            saveAndRender();
+        }
+
+        function resetLayout() {
+            currentLayout = JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
+            saveAndRender();
+            // Also notify server via WS if needed, but local is enough for UI
+        }
+
+        function saveAndRender() {
+            localStorage.setItem('holodeck_layout', JSON.stringify(currentLayout));
+            renderLayout();
+        }
+
+        // --- SIMULATION & WEBSOCKETS ---
+        const ws = new WebSocket(`ws://${location.host}/ws`);
+        
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            
-            if (data.type === 'UI_UPDATE') {
-                activateEphemeralUI(data.config, data.avatar);
-                log(`[INTENT] Parsed: ${data.config.intent}`, 'success');
+            if(data.type === 'UI_UPDATE') {
+                showEphemeral(data.config, data.avatar);
             } else if (data.type === 'UI_CLEAR') {
-                closeEphemeralUI();
+                hideEphemeral();
+            } else if (data.type === 'RESET_LAYOUT') {
+                resetLayout(); // Triggered by Voice
             }
         };
 
-        function activateEphemeralUI(config, avatar) {
-            ephemeralLayer.classList.add('active');
-            dynamicWidgets.innerHTML = ''; // Clear
-
-            // Render Widgets
-            config.widgets.forEach(w => {
-                const row = document.createElement('div');
-                row.style.margin = "10px 0";
-                row.innerHTML = `<label style="color:#888; font-size:0.8rem">${w.label}</label><br>`;
-                
-                if (w.type === 'slider') {
-                    row.innerHTML += `<input type="range" style="width:100%; accent-color:var(--accent)" min="${w.range[0]}" max="${w.range[1]}" value="${w.default}">`;
-                } else if (w.type === 'button') {
-                    row.innerHTML += `<button style="background:var(--danger); color:white; border:none; padding:8px 16px; border-radius:4px; width:100%; cursor:pointer">${w.label}</button>`;
-                }
-                dynamicWidgets.appendChild(row);
-            });
-
-            // Update Avatar Text
-            avatarFb.innerText = `AVATAR: "${avatar.speech}"`;
-            avatarFb.style.color = avatar.visual_emotion === 'alert' ? 'var(--danger)' : 'var(--accent)';
-        }
-
-        function closeEphemeralUI() {
-            ephemeralLayer.classList.remove('active');
-            log("[UI] Ephemeral Layer Dissolved");
-        }
-
-        function log(msg, type='') {
-            const div = document.createElement('div');
-            div.className = `log-entry ${type}`;
-            const time = new Date().toLocaleTimeString().split(' ')[0];
-            div.innerText = `[${time}] ${msg}`;
-            logFeed.insertBefore(div, logFeed.firstChild);
-        }
-
-        // --- Mock Simulation ---
-        async function triggerMockVoice() {
-            const intents = [
-                "Hand me the scalpel gently",
-                "Emergency Stop right now!",
-                "Calibrate safety sensors"
-            ];
-            const cmd = intents[Math.floor(Math.random() * intents.length)];
-            log(`[VOICE] User: "${cmd}"`);
+        function showEphemeral(config, avatar) {
+            const el = document.getElementById('ephemeral-overlay');
+            const widgets = document.getElementById('e-widgets');
+            const av = document.getElementById('e-avatar');
             
-            await fetch('/api/command', {
+            if(!el) return; // Might be hidden if Viewport panel closed
+            
+            widgets.innerHTML = '';
+            config.widgets.forEach(w => {
+                 widgets.innerHTML += `<div style="margin-bottom:8px; font-size:0.8rem; color:#ccc">${w.label}</div>`;
+            });
+             
+            av.innerText = `AVATAR: ${avatar.speech}`;
+            el.classList.add('active');
+        }
+        
+        function hideEphemeral() {
+            const el = document.getElementById('ephemeral-overlay');
+            if(el) el.classList.remove('active');
+        }
+
+        function startLoops() {
+            setInterval(() => {
+                const el = document.getElementById('val-temp');
+                if(el) el.innerText = (40 + Math.random()*2).toFixed(1) + "°C";
+            }, 1000);
+        }
+
+        async function triggerVoice() {
+             // Mock command sending
+             await fetch('/api/command', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: cmd })
+                body: JSON.stringify({ text: "Reset Dashboard Layout" })
             });
-
-            // Auto-close after 5s
-            setTimeout(() => {
-                ws.send("clear");
-            }, 5000);
         }
+
+        init();
     </script>
 </body>
 </html>

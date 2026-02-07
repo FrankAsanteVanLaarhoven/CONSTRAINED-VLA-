@@ -59,7 +59,13 @@ async def process_command(cmd: VoiceCommand):
     """
     print(f"[Server] Received command: {cmd.text}")
     
-    # 1. Generate UI
+    # 1. Generate UI / Parse Special Commands
+    if "reset" in cmd.text.lower() and "layout" in cmd.text.lower():
+        # Special System Command
+        payload = { "type": "RESET_LAYOUT" }
+        await manager.broadcast(payload)
+        return {"status": "success", "intent": "system_reset"}
+
     ui_config = parser.parse(cmd.text)
     
     # 2. Generate Avatar Response

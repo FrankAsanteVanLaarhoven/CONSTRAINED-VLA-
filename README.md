@@ -26,16 +26,16 @@ We have implemented three key prototypes to validate the proposal.
     ```
     *(Output: "SUCCESS: Adapter prevented collision (Actual Margin > 0)")*
 
-### 3. The Ephemeral UI (Year 3)
-*   **Goal:** Prove "Zero-UI" and Intent-Based Control.
-*   **Run:** specific Web Visualization.
+### 3. The Holodeck Dashboard (Year 3+)
+*   **Goal:** Prove "Minority Report" style interaction (Drag-and-Drop, Intent-Based).
+*   **Run:** A full "Command Center" with Stage Manager and Voice Control.
     ```bash
     # Terminal 1: Start Server
-    uvicorn src.ui.server:app --reload --port 8000
+    uvicorn src.ui.server:app --reload --port 8000 --host 0.0.0.0
     
-    # Browser: Open http://127.0.0.1:8000/client/index.html
+    # Browser: Open http://localhost:8000/dashboard
     ```
-    *(Interaction: Click "Mock Voice" buttons to see the UI generate on the fly)*
+    *(Interaction: Drag panels from the sidebar. Say "Reset Layout" to restore default.)*
 
 ---
 
