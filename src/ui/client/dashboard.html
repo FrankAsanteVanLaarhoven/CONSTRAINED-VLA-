@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAFETY-TRANSFER | Command Center</title>
+    <!-- Fonts: Inter & JetBrains Mono for that technical look -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-dark: #050505;
+            --panel-bg: rgba(20, 20, 25, 0.7);
+            --border: rgba(255, 255, 255, 0.08);
+            --accent: #00f2ff;
+            --warning: #ffcc00;
+            --danger: #ff2a6d;
+            --success: #00ff9d;
+            --grid-color: rgba(0, 242, 255, 0.03);
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-dark);
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            color: #eee;
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            display: grid;
+            grid-template-rows: 60px 1fr 60px;
+            overflow: hidden;
+        }
+
+        /* --- HEADER --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(10px);
+        }
+        .brand {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.4);
+        }
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 4px 12px;
+            border-radius: 12px;
+            background: rgba(0, 255, 157, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        /* --- MAIN DASHBOARD GRID --- */
+        main {
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .panel h3 {
+            margin: 0;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: #888;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        /* LEFT: TELEMETRY */
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+        .metric span:last-child { color: var(--accent); }
+        
+        .progress-bar {
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        /* CENTER: VISUALIZER (The "World") */
+        #viewport {
+            position: relative;
+            background: radial-gradient(circle at center, rgba(10, 20, 30, 0.5), #000);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
+            overflow: hidden;
+        }
+        /* Mock 3D Elements */
+        .robot-model {
+            width: 100px;
+            height: 150px;
+            border: 2px solid var(--accent);
+            border-radius: 10px;
+            box-shadow: 0 0 20px var(--accent);
+            transform: rotateY(0deg);
+            animation: float 6s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono';
+            font-size: 0.7rem;
+            color: var(--accent);
+        }
+        .safety-capsule {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border: 1px dashed var(--danger);
+            border-radius: 50%;
+            opacity: 0.3;
+            transform: rotateX(60deg);
+            animation: scan 4s linear infinite;
+        }
+
+        /* RIGHT: LOGS & CHAT */
+        #log-feed {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: #aaa;
+            overflow-y: auto;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .log-entry { opacity: 0.7; }
+        .log-entry.warn { color: var(--warning); }
+        .log-entry.crit { color: var(--danger); }
+
+        /* --- EPHEMERAL OVERLAY (Hidden by default) --- */
+        #ephemeral-layer {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            background: rgba(10, 10, 15, 0.95);
+            border: 1px solid var(--accent);
+            border-radius: 16px;
+            padding: 20px;
+            display: none; /* Toggled by intent */
+            box-shadow: 0 0 50px rgba(0, 242, 255, 0.2);
+            z-index: 100;
+        }
+        #ephemeral-layer.active { display: block; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        /* VOICE BUTTON */
+        #voice-activator {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--panel-bg);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);
+        }
+        #voice-activator:hover {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 0 40px rgba(0, 242, 255, 0.6);
+        }
+
+        @keyframes float { 0%, 100% { transform: translateY(0) rotateY(0deg); } 50% { transform: translateY(-10px) rotateY(10deg); } }
+        @keyframes scan { 0% { transform: rotateX(60deg) scale(0.8); opacity: 0.1; } 50% { opacity: 0.4; } 100% { transform: rotateX(60deg) scale(1.2); opacity: 0; } }
+        @keyframes popIn { from { transform: translateX(-50%) scale(0.8); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">SAFETY-TRANSFER <span style="color:#666">//</span> OS</div>
+        <div class="status-badge">SYSTEM: ONLINE</div>
+    </header>
+
+    <main>
+        <!-- LEFT: Humanoid Status -->
+        <div class="panel">
+            <h3>Unitree G1 Status</h3>
+            <div class="metric">
+                <span>Joint Temp</span>
+                <span id="metric-temp">42°C</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 40%"></div></div>
+
+            <div class="metric">
+                <span>Battery</span>
+                <span id="metric-batt">87%</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 87%"></div></div>
+
+            <div class="metric">
+                <span>Network Latency</span>
+                <span id="metric-ping">12ms</span>
+            </div>
+
+            <br>
+            <h3>Safety Adapter</h3>
+            <div class="metric">
+                <span>Margin</span>
+                <span id="metric-margin" style="color:var(--success)">0.45m</span>
+            </div>
+            <div class="metric">
+                <span>Risk Index</span>
+                <span id="metric-risk">LOW</span>
+            </div>
+        </div>
+
+        <!-- CENTER: Viewport -->
+        <div id="viewport">
+            <div class="safety-capsule"></div>
+            <div class="robot-model">
+                G1-Bot<br>STANDBY
+            </div>
+            
+            <!-- EPHEMERAL POPUP -->
+            <div id="ephemeral-layer">
+                <h3 style="color:var(--accent); margin-top:0;">INTENT DETECTED</h3>
+                <div id="dynamic-widgets">
+                    <!-- Sliders spawn here -->
+                </div>
+                <div id="avatar-feedback" style="margin-top:15px; font-style:italic; color:#aaa;">
+                    "Listening..."
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Logs -->
+        <div class="panel">
+            <h3>System Logs</h3>
+            <div id="log-feed">
+                <div class="log-entry">[10:00:01] System Initialized</div>
+                <div class="log-entry">[10:00:02] Connected to Safety Layer</div>
+                <div class="log-entry">[10:00:05] Telemetry Stream: ACTIVE</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Global Voice Trigger -->
+    <button id="voice-activator" onclick="triggerMockVoice()">
+        <span id="mic-icon">MICROPHONE ACTIVE</span>
+    </button>
+
+    <script>
+        const ws = new WebSocket(`ws://${location.host}/ws`);
+        const logFeed = document.getElementById('log-feed');
+        const ephemeralLayer = document.getElementById('ephemeral-layer');
+        const dynamicWidgets = document.getElementById('dynamic-widgets');
+        const avatarFb = document.getElementById('avatar-feedback');
+
+        // --- Mock Telemetry Loop ---
+        setInterval(() => {
+            // Randomize Metrics for "Alive" feel
+            document.getElementById('metric-temp').innerText = (40 + Math.random() * 5).toFixed(1) + "°C";
+            document.getElementById('metric-ping').innerText = (10 + Math.floor(Math.random() * 10)) + "ms";
+            
+            // Random Safety Fluctuation
+            const margin = (0.4 + Math.random() * 0.1).toFixed(2);
+            document.getElementById('metric-margin').innerText = margin + "m";
+        }, 1000);
+
+        // --- WebSocket Handling ---
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'UI_UPDATE') {
+                activateEphemeralUI(data.config, data.avatar);
+                log(`[INTENT] Parsed: ${data.config.intent}`, 'success');
+            } else if (data.type === 'UI_CLEAR') {
+                closeEphemeralUI();
+            }
+        };
+
+        function activateEphemeralUI(config, avatar) {
+            ephemeralLayer.classList.add('active');
+            dynamicWidgets.innerHTML = ''; // Clear
+
+            // Render Widgets
+            config.widgets.forEach(w => {
+                const row = document.createElement('div');
+                row.style.margin = "10px 0";
+                row.innerHTML = `<label style="color:#888; font-size:0.8rem">${w.label}</label><br>`;
+                
+                if (w.type === 'slider') {
+                    row.innerHTML += `<input type="range" style="width:100%; accent-color:var(--accent)" min="${w.range[0]}" max="${w.range[1]}" value="${w.default}">`;
+                } else if (w.type === 'button') {
+                    row.innerHTML += `<button style="background:var(--danger); color:white; border:none; padding:8px 16px; border-radius:4px; width:100%; cursor:pointer">${w.label}</button>`;
+                }
+                dynamicWidgets.appendChild(row);
+            });
+
+            // Update Avatar Text
+            avatarFb.innerText = `AVATAR: "${avatar.speech}"`;
+            avatarFb.style.color = avatar.visual_emotion === 'alert' ? 'var(--danger)' : 'var(--accent)';
+        }
+
+        function closeEphemeralUI() {
+            ephemeralLayer.classList.remove('active');
+            log("[UI] Ephemeral Layer Dissolved");
+        }
+
+        function log(msg, type='') {
+            const div = document.createElement('div');
+            div.className = `log-entry ${type}`;
+            const time = new Date().toLocaleTimeString().split(' ')[0];
+            div.innerText = `[${time}] ${msg}`;
+            logFeed.insertBefore(div, logFeed.firstChild);
+        }
+
+        // --- Mock Simulation ---
+        async function triggerMockVoice() {
+            const intents = [
+                "Hand me the scalpel gently",
+                "Emergency Stop right now!",
+                "Calibrate safety sensors"
+            ];
+            const cmd = intents[Math.floor(Math.random() * intents.length)];
+            log(`[VOICE] User: "${cmd}"`);
+            
+            await fetch('/api/command', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: cmd })
+            });
+
+            // Auto-close after 5s
+            setTimeout(() => {
+                ws.send("clear");
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

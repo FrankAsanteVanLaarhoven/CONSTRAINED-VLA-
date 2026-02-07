@@ -20,6 +20,11 @@ app = FastAPI()
 # Serve static client files
 app.mount("/client", StaticFiles(directory="src/ui/client", html=True), name="client")
 
+@app.get("/dashboard")
+async def get_dashboard():
+    with open("src/ui/client/dashboard.html", "r") as f:
+        return HTMLResponse(content=f.read())
+
 # State
 class ConnectionManager:
     def __init__(self):
