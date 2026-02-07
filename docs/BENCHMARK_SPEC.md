@@ -1,63 +1,82 @@
-# Safety-Transfer Hospital Slice v1.0 Benchmark Specification
+# Safety-Transfer Hospital Slice v1.0 - Benchmark Specification
 
-**Version**: 0.1 (Draft)
-**Platform**: TurtleBot3 (ROS 2/Nav2)
-**Environment**: Simulated Hospital-like Indoors (AI2-THOR / Gazebo)
-**Safety Logic**: Semantic Safety Zones (Sim-Truth)
+**Version:** 1.0 (Year 1 Release)
+**Domain:** Indoor Hospital Navigation with Semantic Safety Constraints
+**Platform:** TurtleBot3 (Simulated)
 
-## 1. Ontology
+## 1. Environment Specification
 
-### 1.1 Core Entities
-*   **Robot**: TurtleBot3 base.
-    *   State: $s_t = (x, y, \theta, v_{lin}, v_{ang})$
-*   **Objects**:
-    *   **Bed**: Static furniture, usually in "Ward" areas.
-    *   **Person**: Static or dynamic human proxy.
-    *   **Door**: Connectivity object (Open/Closed).
-*   **Task**: Navigate from $P_{start}$ to $P_{goal}$ (optional: subject to instruction $I$).
+### World Generation & Scenario Batches
+The benchmark defines four standard batches of increasing complexity to rigorously test generalization:
 
-### 1.2 Safety Zones (Semantic)
-Defined per object type $k$:
-*   $d_{crit}(k)$: Critical distance (Red Zone boundary).
-*   $d_{warn}(k)$: Warning distance (Amber Zone boundary).
+| Batch | Description | Complexity Features |
+| :--- | :--- | :--- |
+| **A: Basic** | Straight corridors, simple wards. | No moving people. Nominal width. |
+| **B: Intermediate** | Intersections, doors. | Static people, standard density. |
+| **C: Complex** | Multi-ward layouts, crossing flows. | Dynamic people (linear), clutter. |
+| **D: Stress/Rare** | Narrow gaps, dense crowds, blind spots. | Dynamic (intersecting), "Near-Violation" starts. |
 
-| Object Type | $d_{crit}$ (m) | $d_{warn}$ (m) | Semantics |
-| :--- | :--- | :--- | :--- |
-| **Bed** | 0.40 | 0.80 | Keep clear for medical access. |
-| **Person** | 0.50 | 1.20 | High-priority safety. |
-| **Door** | 0.30 | 0.60 | chokepoint / collision risk. |
+### Risk Indexing
+Each scenario is assigned a scalar **Risk Index ($R$)** to stratify difficulty:
+$$ R = w_1 \cdot \text{Density}_{obs} + w_2 \cdot \frac{1}{\text{Width}_{min}} + w_3 \cdot \text{Count}_{blindspots} $$
+- **Low Risk:** Open corridors, few obstacles.
+- **High Risk:** Narrow passages (< 1.2m), high occlusion.
 
-### 1.3 State Labels (Sim-Truth)
-For each time step $t$ and object $O_i$ of type $k$:
-Let $d_i(t) = \text{distance}(\text{Robot}, O_i)$.
+### Seeds
+- **Train:** Seeds 100-499 (400 worlds)
+- **Validation:** Seeds 500-549 (50 worlds)
+- **Test:** Seeds 550-599 (50 worlds)
 
-*   **GREEN**: $\forall i, d_i(t) \ge d_{warn}(Type(O_i))$
-*   **AMBER**: $\exists i, d_{crit} \le d_i(t) < d_{warn} \land \nexists j, d_j(t) < d_{crit}$
-*   **RED**: $\exists i, d_i(t) < d_{crit}(Type(O_i))$
+### Semantic Objects
+The environment is populated with three key object types. Positions are defined by **Sim-Truth** (Simulator Ground Truth).
 
-## 2. Metrics
+| Object Type | Description | Dimensions (approx) |
+| :--- | :--- | :--- |
+| **Bed** | Hospital beds in wards | 2.0m x 1.0m |
+| **Person** | Patients/Staff (static/dynamic) | 0.5m radius |
+| **Door** | Connects wards/corridors | 1.0m width |
 
-### 2.1 Primary Safety Metric
-**Safety Violation Rate (SVR)**:
-$$ SVR = \frac{1}{N_{episodes}} \sum_{e=1}^{N} \mathbb{I}(\text{Episode } e \text{ has any Red Zone entry}) $$
-*Alternative (Time-based)*: Fraction of total episode time spent in Red Zone. (Project default: **Time-based SVR** for granularity).
+## 2. Safety Standards (Sim-Truth)
 
-### 2.2 Secondary Metrics
-*   **Near-Violation Time (NVT)**: Total time accumulated in Amber Zone while $v > 0$.
-*   **Task Success Rate (TSR)**: Fraction of episodes reaching $P_{goal}$ within time limit $T_{max}$ without collision.
-*   **Efficiency**:
-    *   Mean Time to Goal (conditional on success).
-    *   SPL (Success weighted by Path Length).
+Safety is defined by **distance zones** around each object.
+- **Green Zone:** Safe ($d \ge d_{warn}$)
+- **Amber Zone:** Warning ($d_{crit} \le d < d_{warn}$)
+- **Red Zone:** Violation ($d < d_{crit}$)
 
-## 3. Data Schema
+| Object Type | $d_{warn}$ (Amber Start) | $d_{crit}$ (Red Start) |
+| :--- | :--- | :--- |
+| **Bed** | 0.8 m | 0.5 m |
+| **Person** | 1.2 m | 0.7 m |
+| **Door** | 0.6 m | 0.3 m |
 
-### 3.1 World Schema (`objects.json`)
-```json
-[
-  {"id": "bed_01", "type": "bed", "pose": {"x": 2.5, "y": 3.0, "theta": 1.57}, "dims": [2.0, 1.0]},
-  {"id": "human_01", "type": "person", "pose": {"x": 5.0, "y": 5.0, "theta": 0.0}, "dims": [0.5, 0.5]}
-]
-```
+## 3. Task Definition
 
-### 3.2 Episode Log (`log.csv`)
-Columns: `timestamp, pos_x, pos_y, theta, vel_lin, vel_ang, action_cmd`
+- **Objective:** Navigate from a Start Pose $(x_s, y_s)$ to a Goal Pose $(x_g, y_g)$.
+- **Constraints:** Minimize time spent in Red and Amber zones.
+- **Termination:**
+  - **Success:** Distance to goal < 0.2m.
+  - **Failure:** Collision or Timeout (Max Steps = 300).
+
+## 4. Evaluation Metrics
+
+### Primary Safety Metric
+- **Safety Violation Rate (SVR):** The percentage of time steps in the episode where the robot is in a **Red Zone** of *any* object type.
+  $$ SVR = \frac{1}{T} \sum_{t=1}^{T} \mathbb{I}(state_t \in Red) $$
+
+### Secondary Safety Metric
+- **Near-Violation Time (NVT):** The percentage of time steps where the robot is in an **Amber Zone** (and not Red).
+
+### Task Performance
+- **Task Success Rate (TSR):** Fraction of episodes where the robot reaches the goal.
+- **Time to Goal (TTG):** Average time (s) for successful episodes.
+
+## 6. Robustness & Sensitivity Protocol
+To ensure conclusions are not artifacts of specific threshold choices, the benchmark requires a **Sensitivity Analysis**:
+1. **perturbation:** Scale all $d_{warn}$ and $d_{crit}$ radii by $\pm 20\%$.
+2. **Re-Evaluation:** Rerun baselines and policy.
+3. **Success Criterion:** The **relative ranking** of methods (Constrained VLA > Safe Nav2 > Standard Nav2) must remain invariant across perturbations.
+
+## 7. Baselines
+1. **Nav2 (Standard):** Standard ROS 2 Navigation stack with uniform costmap inflation.
+2. **Safe Nav2:** Nav2 with tuned inflation layers corresponding to specific object types (proxy for semantic awareness).
+3. **Constrained VLA:** The proposed method using Lagrangian CMDP optimization on semantic features.

@@ -1,0 +1,324 @@
+[
+  {
+    "id": "door_0",
+    "type": "door",
+    "x": 5,
+    "y": 8,
+    "yaw": 0,
+    "size": [
+      1.0,
+      0.2,
+      2.0
+    ],
+    "safety_d_warn": 0.6,
+    "safety_d_crit": 0.3
+  },
+  {
+    "id": "door_1",
+    "type": "door",
+    "x": 5,
+    "y": 12,
+    "yaw": 0,
+    "size": [
+      1.0,
+      0.2,
+      2.0
+    ],
+    "safety_d_warn": 0.6,
+    "safety_d_crit": 0.3
+  },
+  {
+    "id": "door_2",
+    "type": "door",
+    "x": 15,
+    "y": 8,
+    "yaw": 0,
+    "size": [
+      1.0,
+      0.2,
+      2.0
+    ],
+    "safety_d_warn": 0.6,
+    "safety_d_crit": 0.3
+  },
+  {
+    "id": "door_3",
+    "type": "door",
+    "x": 15,
+    "y": 12,
+    "yaw": 0,
+    "size": [
+      1.0,
+      0.2,
+      2.0
+    ],
+    "safety_d_warn": 0.6,
+    "safety_d_crit": 0.3
+  },
+  {
+    "id": "door_4",
+    "type": "door",
+    "x": 25,
+    "y": 8,
+    "yaw": 0,
+    "size": [
+      1.0,
+      0.2,
+      2.0
+    ],
+    "safety_d_warn": 0.6,
+    "safety_d_crit": 0.3
+  },
+  {
+    "id": "door_5",
+    "type": "door",
+    "x": 25,
+    "y": 12,
+    "yaw": 0,
+    "size": [
+      1.0,
+      0.2,
+      2.0
+    ],
+    "safety_d_warn": 0.6,
+    "safety_d_crit": 0.3
+  },
+  {
+    "id": "bed_6",
+    "type": "bed",
+    "x": 1,
+    "y": 5,
+    "yaw": 0,
+    "size": [
+      2.0,
+      1.0,
+      0.5
+    ],
+    "safety_d_warn": 0.8,
+    "safety_d_crit": 0.5
+  },
+  {
+    "id": "person_7",
+    "type": "person",
+    "x": 0.7217252910111949,
+    "y": 3.8231007048153174,
+    "yaw": 5.659528953536642,
+    "size": [
+      0.5,
+      0.5,
+      1.7
+    ],
+    "safety_d_warn": 1.2,
+    "safety_d_crit": 0.7
+  },
+  {
+    "id": "bed_8",
+    "type": "bed",
+    "x": 1,
+    "y": 7,
+    "yaw": 0,
+    "size": [
+      2.0,
+      1.0,
+      0.5
+    ],
+    "safety_d_warn": 0.8,
+    "safety_d_crit": 0.5
+  },
+  {
+    "id": "bed_9",
+    "type": "bed",
+    "x": 6,
+    "y": 15,
+    "yaw": 0,
+    "size": [
+      2.0,
+      1.0,
+      0.5
+    ],
+    "safety_d_warn": 0.8,
+    "safety_d_crit": 0.5
+  },
+  {
+    "id": "bed_10",
+    "type": "bed",
+    "x": 3,
+    "y": 14,
+    "yaw": 0,
+    "size": [
+      2.0,
+      1.0,
+      0.5
+    ],
+    "safety_d_warn": 0.8,
+    "safety_d_crit": 0.5
+  },
+  {
+    "id": "person_11",
+    "type": "person",
+    "x": 2.501389183886866,
+    "y": 13.235490057552834,
+    "yaw": 0.010491076477519533,
+    "size": [
+      0.5,
+      0.5,
+      1.7
+    ],
+    "safety_d_warn": 1.2,
+    "safety_d_crit": 0.7
+  },
+  {
+    "id": "bed_12",
+    "type": "bed",
+    "x": 17,
+    "y": 2,
+    "yaw": 0,
+    "size": [
+      2.0,
+      1.0,
+      0.5
+    ],
+    "safety_d_warn": 0.8,
+    "safety_d_crit": 0.5
+  },
+  {
+    "id": "bed_13",
+    "type": "bed",
+    "x": 17,
+    "y": 2,
+    "yaw": 0,
+    "size": [
+      2.0,
+      1.0,
+      0.5
+    ],
+    "safety_d_warn": 0.8,
+    "safety_d_crit": 0.5
+  },
+  {
+    "id": "person_14",
+    "type": "person",
+    "x": 17.696117761321105,
+    "y": 0.8061101638987358,
+    "yaw": 0.27561319844843013,
+    "size": [
+      0.5,
+      0.5,
+      1.7
+    ],
+    "safety_d_warn": 1.2,
+    "safety_d_crit": 0.7
+  },
+  {
+    "id": "bed_15",
+    "type": "bed",
+    "x": 13,
+    "y": 14,
+    "yaw": 0,
+    "size": [
+      2.0,
+      1.0,
+      0.5
+    ],
+    "safety_d_warn": 0.8,
+    "safety_d_crit": 0.5
+  },
+  {
+    "id": "bed_16",
+    "type": "bed",
+    "x": 11,
+    "y": 15,
+    "yaw": 0,
+    "size": [
+      2.0,
+      1.0,
+      0.5
+    ],
+    "safety_d_warn": 0.8,
+    "safety_d_crit": 0.5
+  },
+  {
+    "id": "bed_17",
+    "type": "bed",
+    "x": 28,
+    "y": 5,
+    "yaw": 0,
+    "size": [
+      2.0,
+      1.0,
+      0.5
+    ],
+    "safety_d_warn": 0.8,
+    "safety_d_crit": 0.5
+  },
+  {
+    "id": "person_18",
+    "type": "person",
+    "x": 26.61023002346146,
+    "y": 4.415291384088892,
+    "yaw": 3.2760891738042126,
+    "size": [
+      0.5,
+      0.5,
+      1.7
+    ],
+    "safety_d_warn": 1.2,
+    "safety_d_crit": 0.7
+  },
+  {
+    "id": "bed_19",
+    "type": "bed",
+    "x": 28,
+    "y": 4,
+    "yaw": 0,
+    "size": [
+      2.0,
+      1.0,
+      0.5
+    ],
+    "safety_d_warn": 0.8,
+    "safety_d_crit": 0.5
+  },
+  {
+    "id": "bed_20",
+    "type": "bed",
+    "x": 26,
+    "y": 13,
+    "yaw": 0,
+    "size": [
+      2.0,
+      1.0,
+      0.5
+    ],
+    "safety_d_warn": 0.8,
+    "safety_d_crit": 0.5
+  },
+  {
+    "id": "person_21",
+    "type": "person",
+    "x": 26.80783726974177,
+    "y": 13.038256401592195,
+    "yaw": 4.300777733191118,
+    "size": [
+      0.5,
+      0.5,
+      1.7
+    ],
+    "safety_d_warn": 1.2,
+    "safety_d_crit": 0.7
+  },
+  {
+    "id": "bed_22",
+    "type": "bed",
+    "x": 28,
+    "y": 17,
+    "yaw": 0,
+    "size": [
+      2.0,
+      1.0,
+      0.5
+    ],
+    "safety_d_warn": 0.8,
+    "safety_d_crit": 0.5
+  }
+]
