@@ -49,12 +49,29 @@ pip install -r requirements.txt
 
 ---
 
-## 📂 Project Structure
+---
 
-*   `safety_transfer_hospital/`: Year 1 Benchmark (Sim-Truth, Risk Index).
-*   `safety_transfer_humanoid/`: Year 2 Prototype (Capsule Math, Safety Layer).
-*   `src/ui/`: Year 3 Prototype (Intent Parser, Avatar Interface).
-*   `docs/`: Strategy Documents (`FINAL_PROPOSAL.md`, `ROADMAP_YEAR2_3.md`, `EPHEMERAL_UI_STRATEGY.md`).
+## 🔧 Advanced Configuration (Phase 15 Features)
+
+### Real-Time D-ID Avatar
+To enable the **Real** D-ID video stream instead of the mock:
+1.  Get an API key from [D-ID Studio](https://studio.d-id.com/).
+2.  Edit `.env`:
+    ```bash
+    DID_API_KEY="your_key_here"
+    ```
+3.  Restart the server. The dashboard will now stream video.
+
+### Gesture Control
+*   Click the **Camera Icon (📷)** in the sidebar to enable.
+*   **Wave your hand** vigorously to trigger a "Layout Reset."
+
+### Isaac Sim Bridge (Sim2Val)
+To export the current hospital world to NVIDIA Omniverse (USD):
+```bash
+python3 src/simulation/isaac_bridge.py
+```
+*(Creates `exports/usd/hospital_scenario.usda`)*
 
 ---
 
