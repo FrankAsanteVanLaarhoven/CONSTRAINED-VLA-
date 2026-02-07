@@ -47,17 +47,45 @@ class AvatarInterface:
             script = "I'm listening. What do you need?"
             action = "[Avatar leans forward]"
             
-        # REAL D-ID CALL (Mocked logic for speed, but structure is here)
+        # REAL D-ID CALL
         video_url = None
         if self.api_key and script:
-           # In a real app, we would POST to /talks here.
-           # For this prototype, we print the would-be call:
-           # requests.post("https://api.d-id.com/talks", ...)
-           pass
+            try:
+                # 1. Create Talk
+                print(f"[Avatar] Generating D-ID Video for: '{script[:20]}...'")
+                headers = {
+                    "Authorization": f"Basic {self.api_key}",
+                    "Content-Type": "application/json"
+                }
+                payload = {
+                    "script": {"type": "text", "input": script},
+                    "source_url": self.source_url # Uses env var or default
+                }
+                
+                resp = requests.post("https://api.d-id.com/talks", json=payload, headers=headers)
+                if resp.status_code == 201:
+                    talk_id = resp.json().get("id")
+                    
+                    # 2. Poll for Completion (Simple Blocking for Demo)
+                    status = "created"
+                    while status not in ["done", "error"]:
+                        import time
+                        time.sleep(1) # Wait 1s
+                        stat_resp = requests.get(f"https://api.d-id.com/talks/{talk_id}", headers=headers)
+                        data = stat_resp.json()
+                        status = data.get("status")
+                        if status == "done":
+                            video_url = data.get("result_url")
+                            print(f"[Avatar] Video Ready: {video_url}")
+                else:
+                    print(f"[Avatar] D-ID Error {resp.status_code}: {resp.text}")
+                    
+            except Exception as e:
+                print(f"[Avatar] Exception: {e}")
 
         return {
             "speech": script,
             "gesture": action,
             "visual_emotion": emotion,
-            "did_video_url": video_url # Frontend can play this if available
+            "did_video_url": video_url # Frontend will auto-play this
         }

@@ -73,6 +73,14 @@ python3 src/simulation/isaac_bridge.py
 ```
 *(Creates `exports/usd/hospital_scenario.usda`)*
 
+## 🎮 Open-World Digital Twin (Phase 16)
+The Dashboard now features a **Three.js Voxel Engine**.
+1.  **3D Viewport**: The center panel is now a live 3D render.
+    *   **Controls**: Left-Click to Rotate, Right-Click to Pan, Scroll to Zoom.
+2.  **Virtual Kinetics**:
+    *   Enable the Camera (📷).
+    *   **Raise your hand** to see the Robot's arm move in 3D space (Telepresence).
+
 ---
 
 **Status:** Code Complete. Ready for Proposal Submission.

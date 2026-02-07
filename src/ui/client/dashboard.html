@@ -281,6 +281,36 @@
         </div>
     </template>
 
+    <!-- 3D & Vision Modules -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js" crossorigin="anonymous"></script>
+
+    <script type="module">
+        import { HolodeckEngine } from './holodeck_engine.js';
+        
+        // Expose to global for existing logic
+        window.holodeck = null;
+
+        // Init Engine when DOM Ready
+        window.initHolodeck = function() {
+            const viewport = document.getElementById('mini-viewport'); // Target the viewport panel
+            if(viewport) {
+                // Clear existing CSS mock
+                viewport.innerHTML = '';
+                viewport.id = 'three-container'; 
+                window.holodeck = new HolodeckEngine('three-container');
+                console.log("[HOLODECK] Gaming Backbone Initialized");
+            }
+        };
+    </script>
+
     <script>
         // --- LAYOUT ENGINE with Persistence ---
         const DEFAULT_LAYOUT = [
@@ -444,14 +474,23 @@
             const widgets = document.getElementById('e-widgets');
             const av = document.getElementById('e-avatar');
             
-            if(!el) return; // Might be hidden if Viewport panel closed
+            if(!el) return;
             
             widgets.innerHTML = '';
             config.widgets.forEach(w => {
                  widgets.innerHTML += `<div style="margin-bottom:8px; font-size:0.8rem; color:#ccc">${w.label}</div>`;
             });
              
-            av.innerText = `AVATAR: ${avatar.speech}`;
+            // Avatar Feedback checks for Video
+            if (avatar.did_video_url) {
+                av.innerHTML = `
+                    <video src="${avatar.did_video_url}" autoplay style="width:100%; border-radius:8px; border:1px solid var(--accent); margin-top:10px"></video>
+                    <div style="font-size:0.8rem; color:var(--accent)">${avatar.speech}</div>
+                `;
+            } else {
+                av.innerText = `AVATAR: ${avatar.speech}`;
+            }
+            
             el.classList.add('active');
         }
         
@@ -497,22 +536,33 @@
                 
                 log("[GESTURE] Active. Waving hand triggers RESET.", "success");
                 
-                // Motion Loop
+                // Motion Loop & Hand Tracking (Mocked logic upgraded to "Virtual Kinetics")
                 setInterval(() => {
                     ctx.drawImage(video, 0, 0, 64, 64);
                     const frame = ctx.getImageData(0, 0, 64, 64);
+                    
+                    // 1. Motion -> Reset
                     if (prevFrame) {
                         const diff = calculateMotion(prevFrame.data, frame.data);
-                        if (diff > 3000) { // Threshold
+                        if (diff > 3000) { 
                              log("[GESTURE] MOTION DETECTED: RESET!");
                              resetLayout(); 
-                             // Debounce
                              prevFrame = null; 
                              return; 
                         }
                     }
                     prevFrame = frame;
-                }, 200); // 5Hz Check
+                    
+                    // 2. "Virtual Kinetics" -> Digital Twin Control
+                    // (Simplistic brightness center-of-mass as 'Hand Height' for demo performance)
+                    // Real MediaPipe is heavy for this lightweight edit, leveraging "Visual Flow"
+                    const center = calculateCenterOfMass(frame.data, 64, 64);
+                    if (window.holodeck && center.y > 0) {
+                        // Normalize Y (0..64) -> 0..1
+                        window.holodeck.updateRobotPose({ y: center.y / 64 });
+                    }
+                    
+                }, 100); // 10Hz
                 
             } catch(e) {
                 log("[GESTURE] Camera Denied: " + e);
@@ -526,7 +576,31 @@
             }
             return score / 100; // Normalize
         }
+        
+        function calculateCenterOfMass(data, w, h) {
+             let sumX = 0, sumY = 0, count = 0;
+             for(let y=0; y<h; y+=4) { // stride for speed
+                 for(let x=0; x<w; x+=4) {
+                     const i = (y*w + x)*4;
+                     const brightness = (data[i] + data[i+1] + data[i+2]) / 3;
+                     if(brightness > 100) { // bright spot (hand/face)
+                         sumX += x; sumY += y; count++;
+                     }
+                 }
+             }
+             if(count === 0) return {x:-1, y:-1};
+             return { x: sumX/count, y: sumY/count };
+        }
 
+        // Hook into Panel Creation to init 3D engine if Viewport exists
+        const originalRender = renderLayout;
+        renderLayout = function() {
+            originalRender();
+            setTimeout(() => {
+                if(window.initHolodeck) window.initHolodeck();
+            }, 100);
+        }
+        
         init();
     </script>
 </body>
