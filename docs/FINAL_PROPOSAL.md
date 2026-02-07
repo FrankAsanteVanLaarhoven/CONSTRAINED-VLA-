@@ -56,7 +56,23 @@ We establish a multi-domain benchmark ecosystem:
 
 ---
 
-## 4. Impact & Conclusion
-By providing the field with (1) a rigorous "Sim-Truth" benchmark and (2) a plug-and-play "Safety Adapter" for foundation models, "Safety-Transfer" solves the critical bottleneck of Embodied AI: **Trust.**
 
-We move beyond "The robot drove 100 miles without crashing" to "The robot mathematically satisfied the 'Patient Safety Standard' for 100% of the operation." This is the standard required for healthcare, and this is the standard we deliver.
+---
+
+## 4. Year 3: The "Zero-UI" Interaction Layer
+*Focus: Ephemeral Interfaces & Trust*
+
+Beyond safety, we redefine the **Human-Robot Interaction Contract**. We reject the 50-year-old WIMP (Windows, Icons, Menus, Pointers) paradigm. Instead, we implement an **Ephemeral UI** that is:
+
+1.  **Intent-Based:** The user speaks naturally (*"Hand me the scalpel gently"*), and a Large Language Model (Gemini 1.5 Pro) parses this into a precise widget configuration.
+2.  **Generative:** The system spawns a temporary, task-specific interface (e.g., a "Force Slider" and "Safety Zone Overlay") which dissolves once the task is complete.
+3.  **Avatar-Centric:** A Digital Humanoid Twin (D-ID) facilitates the interaction, verbalizing the robot's internal *safety state* (e.g., "I am entering the patient's safety capsule; reducing speed.").
+
+**Status:** A functional **FastAPI + WebSocket Prototype** (`src/ui/`) has been implemented, demonstrating real-time "Intent-to-Widget" generation and Avatar feedback.
+
+---
+
+## 5. Impact & Conclusion
+By providing the field with (1) a rigorous "Sim-Truth" benchmark, (2) a "Safety Adapter" for foundation models, and (3) a visionary "Zero-UI" control plane, "Safety-Transfer" solves the critical bottlenecks of Embodied AI: **Safety and Trust.**
+
+We move beyond "The robot drove 100 miles without crashing" to "The robot mathematically satisfied the 'Patient Safety Standard' for 100% of the operation," controlled by an interface that understands human intent. This is the standard required for healthcare, and this is the standard we deliver.

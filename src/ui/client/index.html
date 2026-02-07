@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ephemeral UI | Zero-UI Layer</title>
+    <style>
+      :root {
+        --glass-bg: rgba(20, 20, 35, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --accent: #00f2ff;
+        --danger: #ff2a6d;
+      }
+      body {
+        margin: 0;
+        background: #050510;
+        color: white;
+        font-family: "Inter", sans-serif;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+      }
+
+      /* The "Void" State */
+      #empty-state {
+        opacity: 0.5;
+        font-size: 1.2rem;
+        animation: pulse 3s infinite;
+      }
+
+      /* Dynamic Widget Container */
+      #widget-layer {
+        display: flex;
+        gap: 20px;
+        padding: 40px;
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        backdrop-filter: blur(20px);
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+      }
+      #widget-layer.active {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      /* Widgets */
+      .widget {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      .widget label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #aaa;
+      }
+
+      input[type="range"] {
+        width: 200px;
+        accent-color: var(--accent);
+      }
+
+      button.action-btn {
+        background: var(--danger);
+        border: none;
+        padding: 15px 30px;
+        border-radius: 12px;
+        color: white;
+        font-weight: bold;
+        font-size: 1rem;
+        cursor: pointer;
+        box-shadow: 0 0 20px rgba(255, 42, 109, 0.3);
+      }
+
+      /* Avatar / HUD Overlay */
+      #avatar-feedback {
+        position: absolute;
+        top: 40px;
+        width: 80%;
+        text-align: center;
+        font-size: 1.5rem;
+        text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+      }
+
+      /* Voice Stimulus Mock */
+      #voice-mock {
+        position: absolute;
+        bottom: 20px;
+        display: flex;
+        gap: 10px;
+      }
+      #voice-mock button {
+        background: #333;
+        border: 1px solid #555;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        cursor: pointer;
+      }
+      #voice-mock button:hover {
+        background: #444;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 0.3;
+        }
+        50% {
+          opacity: 0.6;
+        }
+        100% {
+          opacity: 0.3;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top Layer: Avatar Feedback -->
+    <div id="avatar-feedback">Listening for Intent...</div>
+
+    <!-- Center Layer: The Void (Default) or Widgets (Ephemeral) -->
+    <div id="empty-state">No Active Controls. Speak to generate interface.</div>
+
+    <div id="widget-layer">
+      <!-- Spawns here dynamically -->
+    </div>
+
+    <!-- Debug/Mock Controls -->
+    <div id="voice-mock">
+      <button onclick="sendCommand('Hand me the scalpel gently')">
+        "Scalpel (Precision)"
+      </button>
+      <button onclick="sendCommand('Move fast to ER!')">
+        "Emergency (Speed)"
+      </button>
+      <button onclick="sendCommand('System check')">"System Check"</button>
+      <button onclick="clearUI()" style="color: #ff2a6d; border-color: #ff2a6d">
+        Clear / Shake
+      </button>
+    </div>
+
+    <script>
+      const ws = new WebSocket(`ws://${location.host}/ws`);
+      const widgetLayer = document.getElementById("widget-layer");
+      const emptyState = document.getElementById("empty-state");
+      const feedback = document.getElementById("avatar-feedback");
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.type === "UI_UPDATE") {
+          renderUI(data.config);
+          updateAvatar(data.avatar);
+        } else if (data.type === "UI_CLEAR") {
+          clearUIState();
+        }
+      };
+
+      function renderUI(config) {
+        // 1. Clear current
+        widgetLayer.innerHTML = "";
+
+        if (config.widgets.length === 0) {
+          clearUIState();
+          return;
+        }
+
+        // 2. Hide Void, Show Layer
+        emptyState.style.display = "none";
+        widgetLayer.classList.add("active");
+
+        // 3. Spawn Widgets
+        config.widgets.forEach((w) => {
+          const div = document.createElement("div");
+          div.className = "widget";
+
+          const label = document.createElement("label");
+          label.innerText = w.label;
+          div.appendChild(label);
+
+          let control;
+          if (w.type === "slider") {
+            control = document.createElement("input");
+            control.type = "range";
+            control.min = w.range[0];
+            control.max = w.range[1];
+            control.value = w.default;
+            control.step = 0.1;
+          } else if (w.type === "button") {
+            control = document.createElement("button");
+            control.className = "action-btn";
+            control.innerText = w.label;
+            if (w.color) control.style.backgroundColor = w.color;
+          } else if (w.type === "toggle") {
+            control = document.createElement("input");
+            control.type = "checkbox";
+            control.checked = w.default;
+          } else {
+            control = document.createElement("div");
+            control.innerText = `[${w.type}]`;
+          }
+
+          div.appendChild(control);
+          widgetLayer.appendChild(div);
+        });
+      }
+
+      function updateAvatar(avatarData) {
+        feedback.innerText = `"${avatarData.speech}"`;
+        feedback.style.color =
+          avatarData.visual_emotion === "alert" ? "#ff2a6d" : "#00f2ff";
+      }
+
+      function clearUIState() {
+        widgetLayer.classList.remove("active");
+        setTimeout(() => (widgetLayer.innerHTML = ""), 500);
+        emptyState.style.display = "block";
+        feedback.innerText = "Listening for Intent...";
+        feedback.style.color = "white";
+      }
+
+      // --- Mock API Helpers ---
+      async function sendCommand(text) {
+        await fetch("/api/command", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: text }),
+        });
+      }
+
+      function clearUI() {
+        ws.send("clear"); // Simulate generic input
+        clearUIState();
+      }
+    </script>
+  </body>
+</html>
