@@ -467,13 +467,64 @@
             }, 1000);
         }
 
-        async function triggerVoice() {
-             // Mock command sending
-             await fetch('/api/command', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: "Reset Dashboard Layout" })
-            });
+        // --- GESTURE CONTROL (Air Interface) ---
+        let video = null;
+        let prevFrame = null;
+        
+        // Add Webcam View to Sidebar Dock
+        const camView = document.createElement('div');
+        camView.className = 'dock-item';
+        camView.innerHTML = '📷';
+        camView.title = 'Enable Gestures';
+        camView.onclick = enableGestures;
+        document.getElementById('stage-manager').appendChild(camView);
+
+        async function enableGestures() {
+            log("[GESTURE] Initializing Camera...");
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 64, height: 64 } });
+                
+                // Create minimal video element
+                video = document.createElement('video');
+                video.width = 64; video.height = 64;
+                video.srcObject = stream;
+                video.play();
+                
+                // Create processing canvas
+                const cvs = document.createElement('canvas');
+                cvs.width = 64; cvs.height = 64;
+                const ctx = cvs.getContext('2d');
+                
+                log("[GESTURE] Active. Waving hand triggers RESET.", "success");
+                
+                // Motion Loop
+                setInterval(() => {
+                    ctx.drawImage(video, 0, 0, 64, 64);
+                    const frame = ctx.getImageData(0, 0, 64, 64);
+                    if (prevFrame) {
+                        const diff = calculateMotion(prevFrame.data, frame.data);
+                        if (diff > 3000) { // Threshold
+                             log("[GESTURE] MOTION DETECTED: RESET!");
+                             resetLayout(); 
+                             // Debounce
+                             prevFrame = null; 
+                             return; 
+                        }
+                    }
+                    prevFrame = frame;
+                }, 200); // 5Hz Check
+                
+            } catch(e) {
+                log("[GESTURE] Camera Denied: " + e);
+            }
+        }
+
+        function calculateMotion(oldData, newData) {
+            let score = 0;
+            for (let i = 0; i < oldData.length; i += 4) {
+                score += Math.abs(oldData[i] - newData[i]);
+            }
+            return score / 100; // Normalize
         }
 
         init();
